@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String           @id @default(uuid())
+  email         String           @unique
+  passwordHash  String
+  name          String
+  role          String           @default("student")
+  targetRole    String?
+  targetCompany String?
+  bio           String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  resumes       Resume[]
+  analyses      AnalysisReport[]
+
+  @@map("users")
+}
+
+model Resume {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName        String
+  fileUrl         String
+  fileSize        Int
+  fileType        String
+  parsedText      String           @db.Text
+  extractedSkills String[]         @default([])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  analyses        AnalysisReport[]
+
+  @@index([userId])
+  @@map("resumes")
+}
+
+model AnalysisReport {
+  id                 String   @id @default(uuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeId           String?
+  resume             Resume?  @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  jobTitle           String
+  company            String?
+  jobDescription     String   @db.Text
+  matchScore         Int
+  summary            String   @db.Text
+  matchingSkills     String[] @default([])
+  missingSkills      String[] @default([])
+  strengths          String[] @default([])
+  improvements       String[] @default([])
+  interviewQuestions Json     @default("{}")
+  learningPriorities Json     @default("[]")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("analysis_reports")
+}
